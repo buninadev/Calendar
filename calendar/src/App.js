@@ -9,12 +9,12 @@ class DayButton extends React.Component {
   };
   constructor(props) {
     super(props)
-  this.Clickaction= this.Clickaction.bind(this)
+  this.Clickaction= this.Clickaction.bind(this) // binding clickaction to the button instance
   }
 
-
+// seperatly render an instance of OfferTable while passing a list of offers from API as a property 
   UpdateOffers(offers){
-    ReactDOM.render(<OfferTable offers={offers}></OfferTable>,document.getElementById('offers'))
+    ReactDOM.render(<OfferTable offers={offers}></OfferTable>,document.getElementById('offers'))  
   }
 Clickaction()
 {
@@ -26,6 +26,9 @@ Clickaction()
   this.UpdateOffers(offertable)
 }
 
+
+// async method that fetch data from api for every DayButton Instance ... the goal is to have for every button an offers state (data) that is related too
+// props are assigned using Navigator.createbutton ::: Line 92
 async componentDidMount() {
   const dateObj=this.props.year+"-"+this.props.month+"-"+this.props.day
   const url= "https://back.staging.bsport.io/api/v1/offer/?date="+dateObj+"&company=6" ;
@@ -42,7 +45,8 @@ async componentDidMount() {
     );
   }
 }
-/*  Just the first test for data fetching            */
+
+/*  Just the first test for data fetching from the API   */
 // class DataFetcher extends React.Component{
 
 //   state= {
@@ -75,7 +79,12 @@ async componentDidMount() {
 // }
 // }
 
+
+
+// Navigation class: creates a group of buttons (parent of DayButton)
 class Navigation extends React.Component{
+
+
 createButton(year,month,day){
   const dayStr= String(day).padStart(2, '0');
   const monthStr=String(month).padStart(2, '0');
@@ -91,9 +100,9 @@ addDays(date, days) {
 
 laybuttons(start){
   var startdate =new Date(start);
-  let buttons=[]
+  let buttons=[] // array that gonna contain a list of (<DayButton date={dateStr} year={year} month={month} day={day}></DayButton>)
    for (let index = 0; index < 7; index++) {
-        var Iterdate=this.addDays(startdate,index)
+        var Iterdate=this.addDays(startdate,index) // adding days to start date for iteration
         var day =Iterdate.getDate();
         var month= Iterdate.getMonth()+1;
         var year =Iterdate.getFullYear();
@@ -114,7 +123,9 @@ return(
 
 
 class OfferTable extends React.Component{
-static createOffer(activity,disp,level,full,duration,coach){
+
+static createOffer(activity,disp,level,full,duration,coach){    // static method because it is relation to offerTable, it can be moved to class DayButton and nothing will change
+                                                                  // I keep it in this class for code readability
 
   const offer =<div className="Day-offers"><div className="offre">
   <div><b className='activity'>Title: {activity}</b></div>
