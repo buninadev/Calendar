@@ -1,95 +1,89 @@
 import React from 'react';
 import './App.css';
-import ReactDOM from 'react-dom';
 
-class DayButton extends React.Component {
+
+class DataFetcher extends React.Component{
+
   state= {
     loading: true,
-    offers: null,
+    offers: null
   };
-  constructor(props) {
-    super(props)
-  this.Clickaction= this.Clickaction.bind(this) // binding clickaction to the button instance
-  }
-
-// seperatly render an instance of OfferTable while passing a list of offers from API as a property 
-  UpdateOffers(offers){
-    ReactDOM.render(<OfferTable offers={offers}></OfferTable>,document.getElementById('offers'))  
-  }
-Clickaction()
-{
-  let offertable=[]
-  this.state.offers.forEach(element=>{
-   offertable.push(OfferTable.createOffer(element.activity,element.available,element.level,element.full,element.duration_minute,element.coach))
-  });
-
-  this.UpdateOffers(offertable)
-}
-
-
-// async method that fetch data from api for every DayButton Instance ... the goal is to have for every button an offers state (data) that is related too
-// props are assigned using Navigator.createbutton ::: Line 92
+  
 async componentDidMount() {
-  const dateObj=this.props.year+"-"+this.props.month+"-"+this.props.day
-  const url= "https://back.staging.bsport.io/api/v1/offer/?date="+dateObj+"&company=6" ;
-  console.log(url)
+  const url= "https://back.staging.bsport.io/api/v1/offer/?min_date=2020-04-27&max_date=2020-05-03&company=6" ;
   const response = await fetch(url);
   const data= await response.json();
   this.setState({loading:false,offers:data.results})
 }
-  render() {
-    return (
-      <button onClick={this.Clickaction}>
-        {this.props.date} 
-      </button>
-    );
+
+render() {
+  return (
+  <div>
+    {this.state.loading || !this.state.offers ?(
+    <div className="Indicator">loading........</div>
+    ):(
+      <div>
+    <div className="Indicator" >Data Loaded</div> 
+    <Navigation NavOffers={this.state.offers} ></Navigation>
+    </div>)  
   }
-}
-
-/*  Just the first test for data fetching from the API   */
-// class DataFetcher extends React.Component{
-
-//   state= {
-//     loading: true,
-//     offers: null
-//   };
+  </div>
   
-// async componentDidMount() {
-//   const url= "https://back.staging.bsport.io/api/v1/offer/?min_date=2020-04-27&max_date=2020-05-03&company=6" ;
-//   const response = await fetch(url);
-//   const data= await response.json();
-//   this.setState({loading:false,offers:data.results})
-// }
-
-// getoffers(){
-// if(!this.state.loading|| this.state.offers)
-// return(this.state.offers);
-// }
-
-// render() {
-//   return (
-//   <a >
-//     {this.state.loading|| !this.state.offers ?(
-//     <div className="Indicator">loading........</div>
-//     ):(
-//     <div className="Indicator" >Data Loaded</div>)  
-//   }
-//   </a>
-//   );
-// }
-// }
-
-
+ 
+  );
+}
+}
 
 // Navigation class: creates a group of buttons (parent of DayButton)
 class Navigation extends React.Component{
 
-
+  constructor(){
+    super();
+    this.state = {offers: null}
+}
 createButton(year,month,day){
   const dayStr= String(day).padStart(2, '0');
   const monthStr=String(month).padStart(2, '0');
   const dateStr= dayStr+'/'+monthStr;
-return(<DayButton date={dateStr} year={year} month={month} day={day}></DayButton>);
+  return(<button key={dayStr} onClick={this.ClickHandler.bind(this,year,month,day)}>
+      {dateStr} 
+      </button>);
+}
+
+checkSameDate(date1 ,date2){
+
+   date1 = new Date(date1);
+   date2 = new Date(date2);
+
+  var sameday= date1.getDate()===date2.getDate();
+  var samemonth=date1.getMonth()===date2.getMonth();
+  var sameyear=date1.getFullYear()===date2.getFullYear();
+  return(sameday&& samemonth && sameyear)
+}
+
+
+LookForOffers(input,year,month,day){
+  var output=[]
+input.forEach(result => {
+ var startDate=result.date_start;
+ var conditon=this.checkSameDate(startDate,year+'/'+month+'/'+day)
+
+if(conditon){  output.push(result)}
+  
+});
+return output
+}
+
+UNSAFE_componentWillMount(){
+
+  this.ClickHandler(2020,4,27);
+}
+ClickHandler(year, month, day){
+
+var input= this.props.NavOffers;
+var SelectedOffers= this.LookForOffers(input,year,month,day);
+this.setState({offers:SelectedOffers})
+
 }
 
 addDays(date, days) {
@@ -111,39 +105,44 @@ laybuttons(start){
       return buttons
 }
 
-
   render(){
-return(
+return(<div>
     <div className="btn-group">
       {this.laybuttons('2020-04-27')}
+    </div>
+    <div className="offer-group">
+    <OfferTable Displayoffers={this.state.offers}></OfferTable></div>
     </div>
     );
   }
 }
-
-
 class OfferTable extends React.Component{
-
-static createOffer(activity,disp,level,full,duration,coach){    // static method because it is relation to offerTable, it can be moved to class DayButton and nothing will change
-                                                                  // I keep it in this class for code readability
-
-  const offer =<div className="Day-offers"><div className="offre">
-  <div><b className='activity'>Title: {activity}</b></div>
-  <a className= "desc">Disponiblité: {disp.toString()}</a>
-  <a className= "desc">Niveau: {level}</a>
-  <a>Plein: {full.toString()}</a>
-  <br></br>
-  <a className='desc'>durée: {duration}</a>
-  <a className ='desc'>Par: {coach}</a>
-  </div>
-  </div>
-  return offer
+  cool(){
+    var offerGroup= []
+var offers = this.props.Displayoffers
+  offers.forEach(offer => {  
+  offerGroup.push(<Offer key={offer.id} activity={offer.activity} disp={offer.available} level={offer.level} full={offer.full} duration={offer.duration_minute} coach={offer.coach} ></Offer>)
+  });
+  return(offerGroup)
+}
+  render(){
+  return(<div>{this.cool()}</div>);
+  }
 }
 
+class Offer extends React.Component{
 render(){
-   return(<div className ="offer-group">{this.props.offers}</div>)
+   return(<div className="Day-offers"><div className="offre">
+   <div><b className='activity'>Title: {this.props.activity}</b></div>
+   <span className= "desc">Disponiblité: {this.props.disp.toString()}</span>
+   <span className= "desc">Niveau: {this.props.level}</span>
+   <span>Plein: {this.props.full.toString()}</span>
+   <br></br>
+   <span className='desc'>durée: {this.props.duration}</span>
+   <span className ='desc'>Par: {this.props.coach}</span>
+   </div>
+   </div> );
 }
-
 }
 
 function App() {
@@ -154,19 +153,12 @@ function App() {
           Company ID: 6
         </p>
       </header>
-
       <div className="Actual-week">
-        <a>
+        <span>
           Semaine actuelle : Lun 27/04 - Dim 03/05
-        </a>
+        </span>
       </div>
-      <div className="Days-week">
-      <Navigation></Navigation>
-      </div >
-      <div className="offers">
-
-      </div>
-      
+      <DataFetcher></DataFetcher>
     </div>
   );
   
